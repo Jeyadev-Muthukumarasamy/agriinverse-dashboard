@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import * as React from 'react';
 import { Bar } from 'react-chartjs-2';
-import axios from "axios"
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -10,6 +9,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import axios from 'axios';
 
 ChartJS.register(
   CategoryScale,
@@ -86,20 +86,6 @@ interface CropData {
   statusText: string;
 }
 
-interface DeviceScreenData {
-  screenName: string;
-  averageDuration: number;
-  totalDuration: number;
-  viewCount: number;
-  deviceCountBreakdown: Array<{
-    deviceCount: string;
-    averageDuration: number;
-    totalDuration: number;
-    viewCount: number;
-  }>;
-  countryName: string;
-}
-
 interface DeviceCountData {
   data: {
     data: {
@@ -144,23 +130,23 @@ type ScreenDataType = DetailedScreenData | {
 };
 
 const Screen: React.FC = () => {
-  const [apiData, setApiData] = useState<DetailedApiResponse | null>(null);
-  const [placeData, setPlaceData] = useState<PlaceData | null>(null);
-  const [cropData, setCropData] = useState<CropData | null>(null);
-  const [deviceData, setDeviceData] = useState<DeviceCountData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedCountry, setSelectedCountry] = useState<string>('all');
-  const [selectedCrop, setSelectedCrop] = useState<string>('all');
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [areaFilter, setAreaFilter] = useState<string>('');
-  const [deviceCountFilter, setDeviceCountFilter] = useState<string>('');
-  const [pendingArea, setPendingArea] = useState<string>('');
-  const [pendingDeviceCount, setPendingDeviceCount] = useState<string>('');
-  const [areaData, setAreaData] = useState<ScreenDataType[] | null>(null);
+  const [apiData, setApiData] = React.useState<DetailedApiResponse | null>(null);
+  const [placeData, setPlaceData] = React.useState<PlaceData | null>(null);
+  const [cropData, setCropData] = React.useState<CropData | null>(null);
+  const [deviceData, setDeviceData] = React.useState<DeviceCountData | null>(null);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+  const [selectedCountry, setSelectedCountry] = React.useState<string>('all');
+  const [selectedCrop, setSelectedCrop] = React.useState<string>('all');
+  const [isFilterOpen, setIsFilterOpen] = React.useState(false);
+  const [areaFilter, setAreaFilter] = React.useState<string>('');
+  const [deviceCountFilter, setDeviceCountFilter] = React.useState<string>('');
+  const [pendingArea, setPendingArea] = React.useState<string>('');
+  const [pendingDeviceCount, setPendingDeviceCount] = React.useState<string>('');
+  const [areaData, setAreaData] = React.useState<ScreenDataType[] | null>(null);
 
   // Debug logging for device data
-  useEffect(() => {
+  React.useEffect(() => {
     console.log('DEVICE DATA STATE:', deviceData);
     console.log('DEVICE COUNT FILTER:', deviceCountFilter);
     
@@ -201,7 +187,7 @@ const Screen: React.FC = () => {
   ];
 
   // API base URL
-  const API_BASE_URL = 'http://localhost:3001';
+  const API_BASE_URL = 'https://agriinversebackend-2toj01nw8-jeyadevmuthukumarasamys-projects.vercel.app';
 
   // Country flag mapping
   const countryFlags: {[key: string]: string} = {
@@ -228,13 +214,10 @@ const Screen: React.FC = () => {
   };
 
   // Helper function to get country with flag
-  const getCountryWithFlag = (countryName: string) => {
-    const flag = countryFlags[countryName] || '';
-    return `${countryName} ${flag}`;
-  };
+
 
   // Update useEffect to not refetch on deviceCountFilter change
-  useEffect(() => {
+  React.useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
@@ -615,10 +598,7 @@ const Screen: React.FC = () => {
   };
 
   // Handle filter change
-  const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value;
-    setSelectedCountry(value !== 'all' ? value : 'all');
-  };
+ 
 
   // Update handleCountryChange to reset crop selection
   const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {

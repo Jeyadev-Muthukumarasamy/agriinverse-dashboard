@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { IconType } from 'react-icons'
 import { FiUsers, FiMap, FiLogOut, FiPieChart, FiBell, FiSmartphone, FiDollarSign, FiClock, FiMenu, FiX, FiHome, FiSettings } from 'react-icons/fi'
 import { FaLeaf } from 'react-icons/fa'

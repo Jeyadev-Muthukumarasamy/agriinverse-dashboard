@@ -22,24 +22,10 @@ interface UserData {
   free: boolean;
 }
 
-interface UserResponse {
-  success: boolean;
-  data: UserData[];
-}
-
 interface NotificationState {
   isOpen: boolean;
   message: string;
   selectedUserId: number | null;
-}
-
-interface ScreenTimeData {
-  screenName: string;
-  averageDuration: number;
-  totalDuration: number;
-  viewCount: number;
-  uniqueCountries: string[];
-  uniqueCrops: string[];
 }
 
 const User: React.FC = () => {
@@ -125,19 +111,6 @@ const User: React.FC = () => {
   useEffect(() => {
     setFilteredUsers(userData);
   }, [userData]);
-
-  const sendNotification = async (userId: number) => {
-    try {
-      const response = await axios.post('http://localhost:3001/api/admin/notification/createNotification', {
-        userId: userId,
-        message: notification.message
-      });
-      console.log(response,"this is response")
-      console.log(response,"response")
-    } catch (error) {
-      console.error('Error sending notification:', error);
-    }
-  }
 
   const handleLogout = async (userId: number) => {
     try {
