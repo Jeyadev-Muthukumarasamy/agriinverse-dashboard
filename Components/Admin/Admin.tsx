@@ -11,12 +11,12 @@ const Admin = () => {
     const { role } = location.state as LocationState;
 
     const [data, setData] = useState({
-        email: '',
+        mobileNumber: '',
         password: ''
     })
 
     const [error, setError] = useState({
-        email: false,
+        mobileNumber: false,
         password: false
     })
 
@@ -30,15 +30,15 @@ const Admin = () => {
         
         // Validate before submitting
         handleValidation()
-        if (error.email || error.password) return
+        if (error.mobileNumber || error.password) return
 
         try {
             if (role === 'admin') {
-                if (data.email === 'vasanth@gmail.com' && data.password === '123456') {
+                if (data.mobileNumber === '9876543210' && data.password === '123456') {
                     console.log("Admin login successful")
                     // Add navigation or success handling here
                 } else {
-                    setError({ email: true, password: true })
+                    setError({ mobileNumber: true, password: true })
                     console.log("Admin login failed")
                 }
             } 
@@ -47,8 +47,8 @@ const Admin = () => {
                 console.log("Developer login not implemented")
             } 
             else if (role === 'user') {
-                const response = await axios.post('http://localhost:5000/api/user/login', {
-                    email: data.email,
+                const response = await axios.post('https://agriinverse-api.vercel.app/api/user/login', {
+                    mobileNumber: data.mobileNumber,
                     password: data.password
                 })
                 
@@ -60,17 +60,17 @@ const Admin = () => {
             }
         } catch (error) {
             console.log("Login failed", error)
-            setError({ email: true, password: true })
+            setError({ mobileNumber: true, password: true })
         }
     }
 
     const handleValidation = () => {
         const newError = {
-            email: !data.email || !/\S+@\S+\.\S+/.test(data.email),
+            mobileNumber: !data.mobileNumber || data.mobileNumber.length < 10,
             password: !data.password || data.password.length < 6
         }
         setError(newError)
-        return !newError.email && !newError.password
+        return !newError.mobileNumber && !newError.password
     }
 
 
@@ -89,22 +89,22 @@ const Admin = () => {
                 <form onSubmit={handleSubmit} className='space-y-6'>
                     <div className='space-y-2'>
                         <label className='block text-sm font-medium text-gray-700'>
-                            Email Address
+                            Mobile Number
                         </label>
                         <div className='relative'>
                             <input
-                                type="email"
+                                type="tel"
                                 className='w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm'
-                                placeholder='Enter your email'
+                                placeholder='Enter your mobile number'
                                 required
                                 onChange={handleChange}
-                                name="email"
-                                value={data.email}
+                                name="mobileNumber"
+                                value={data.mobileNumber}
                             />
                             <svg className="w-5 h-5 text-gray-400 absolute left-3 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
                             </svg>
-                            {error.email && <p className='text-sm text-red-500 mt-1'>Please enter a valid email</p>}
+                            {error.mobileNumber && <p className='text-sm text-red-500 mt-1'>Please enter a valid mobile number</p>}
                         </div>
                     </div>
 
