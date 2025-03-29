@@ -5,7 +5,7 @@ import Admin from "../Components/Admin/Admin"
 import Sidebar from "../Components/Sidebar/Sidebar"
 import Screen from "../Components/Screenviewanalytics/Screen"
 import User from "../Components/User/User"
-import Notfound from "../Components/Notfound/Notfound"
+import Notfound from "../Components/NotFound/NotFound"
 import './App.css'
 
 // Layout component that includes the sidebar
