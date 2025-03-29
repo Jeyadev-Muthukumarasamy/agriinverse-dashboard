@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Search from '../Search/Search';
 import axios from 'axios';
 
@@ -51,7 +51,7 @@ const User: React.FC = () => {
     message: '',
     selectedUserId: null
   });
-  const [pageInfo, setPageInfo] = useState({});
+  const _pageInfo = useMemo(() => ({ }), []);
 
   const fetchUsers = async () => {
     try {
@@ -61,7 +61,6 @@ const User: React.FC = () => {
       if (response.data && response.data.data) {
         setUsers(response.data.data);
         setError(null);
-        setPageInfo(response.data.meta);
       } else {
         setError('Failed to fetch users: Invalid response format');
         console.error('Invalid API response:', response.data);
@@ -115,8 +114,6 @@ const User: React.FC = () => {
     }
   };
 
-  
-
   useEffect(() => {
     fetchUsers();
   }, []);
@@ -124,6 +121,10 @@ const User: React.FC = () => {
   useEffect(() => {
     setFilteredUsers(userData);
   }, [userData]);
+
+  useEffect(() => {
+    console.log('Current page info:', _pageInfo);
+  }, [_pageInfo]);
 
   const handleLogout = async (userId: number) => {
     try {
@@ -190,9 +191,6 @@ const User: React.FC = () => {
           </p>
         </div>
       </div>
-
-
-      
 
       {error && (
         <div className="mb-4 p-4 bg-red-50 rounded-md text-red-600">
