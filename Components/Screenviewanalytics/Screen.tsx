@@ -187,7 +187,7 @@ const Screen: React.FC = () => {
   ];
 
   // API base URL
-  const API_BASE_URL = 'https://agriinversebackend-2toj01nw8-jeyadevmuthukumarasamys-projects.vercel.app';
+  const API_BASE_URL = 'https://agriinversebackend-4adlqpn42-jeyadevmuthukumarasamys-projects.vercel.app';
 
   // Country flag mapping
   const countryFlags: {[key: string]: string} = {
