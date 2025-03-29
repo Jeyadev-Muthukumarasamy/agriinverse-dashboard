@@ -44,7 +44,7 @@ const User: React.FC = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:3001/api/user/getUser');
+      const response = await axios.get('https://agriinverse-api.vercel.app/api/user/getUser');
       
       if (response.data && response.data.users) {
         setUsers(response.data.users);
@@ -82,7 +82,7 @@ const User: React.FC = () => {
     }
 
     try {
-      const response = await axios.post('http://localhost:3001/api/admin/notification/createNotification', {
+      const response = await axios.post('/api/admin/notification/createNotification', {
         userId: userId,
         message: notification.message
       });
