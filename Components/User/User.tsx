@@ -28,6 +28,18 @@ interface NotificationState {
   selectedUserId: number | null;
 }
 
+interface UserApiResponse {
+  data: UserData[];
+  meta: {
+    currentPage: number;
+    totalPages: number;
+    pageSize: number;
+    totalCount: number;
+    hasNextPage: boolean;
+    // Add other meta properties as needed
+  };
+}
+
 const User: React.FC = () => {
   const [userData, setUsers] = useState<UserData[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<UserData[]>([]);
@@ -39,16 +51,17 @@ const User: React.FC = () => {
     message: '',
     selectedUserId: null
   });
- 
+  const [pageInfo, setPageInfo] = useState({});
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('https://agriinverse-api.vercel.app/api/user/getUser');
+      const response = await axios.get<UserApiResponse>('https://agriinverse-api.vercel.app/api/user/getuser');
       
-      if (response.data && response.data.users) {
-        setUsers(response.data.users);
+      if (response.data && response.data.data) {
+        setUsers(response.data.data);
         setError(null);
+        setPageInfo(response.data.meta);
       } else {
         setError('Failed to fetch users: Invalid response format');
         console.error('Invalid API response:', response.data);
