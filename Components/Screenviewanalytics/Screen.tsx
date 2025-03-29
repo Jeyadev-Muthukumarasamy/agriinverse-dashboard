@@ -104,7 +104,12 @@ interface DeviceCountData {
   data: {
     data: {
       success: boolean;
-      data: DeviceScreenData[];
+      data: Array<{
+        screenName: string;
+        averageDuration: number;
+        totalDuration: number;
+        viewCount: number;
+      }>;
     };
   };
 }
@@ -153,6 +158,19 @@ const Screen: React.FC = () => {
   const [pendingArea, setPendingArea] = useState<string>('');
   const [pendingDeviceCount, setPendingDeviceCount] = useState<string>('');
   const [areaData, setAreaData] = useState<ScreenDataType[] | null>(null);
+
+  // Debug logging for device data
+  useEffect(() => {
+    console.log('DEVICE DATA STATE:', deviceData);
+    console.log('DEVICE COUNT FILTER:', deviceCountFilter);
+    
+    if (deviceCountFilter && deviceData?.data?.data?.data) {
+      console.log('Device data is available for filter:', deviceCountFilter);
+      console.log('Device data array:', deviceData.data.data.data);
+    } else if (deviceCountFilter) {
+      console.log('Device count filter is set but data is missing or malformed');
+    }
+  }, [deviceData, deviceCountFilter]);
 
   console.log(pendingArea, "areaFilter")
   console.log(selectedCrop,"selectedcrop")
@@ -215,25 +233,12 @@ const Screen: React.FC = () => {
     return `${countryName} ${flag}`;
   };
 
-  // Update useEffect to handle device count filter correctly
+  // Update useEffect to not refetch on deviceCountFilter change
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         let response;
-
-        // Handle device count filter
-        if (deviceCountFilter) {
-          response = await axios.get(`${API_BASE_URL}/api/admin/screenTime/device-count/${deviceCountFilter}`);
-          if (response.data?.data?.success) {
-            setDeviceData(response.data);
-            setApiData(null);
-            setPlaceData(null);
-            setCropData(null);
-            setError(null);
-            return;
-          }
-        }
 
         // Existing filter logic
         if (selectedCountry === 'all' && selectedCrop === 'all') {
@@ -243,6 +248,27 @@ const Screen: React.FC = () => {
             setPlaceData(null);
             setCropData(null);
             setDeviceData(null);
+            setAreaData(null);
+            
+            // Also fetch device count data
+            try {
+              const deviceResponse = await axios.get(`${API_BASE_URL}/api/admin/screenTime/device-count/1`);
+              console.log('Default device count response:', deviceResponse.data);
+              
+              if (deviceResponse.data && deviceResponse.data.success) {
+                const deviceData = {
+                  data: {
+                    data: {
+                      success: true,
+                      data: Array.isArray(deviceResponse.data.data) ? deviceResponse.data.data : []
+                    }
+                  }
+                };
+                setDeviceData(deviceData);
+              }
+            } catch (deviceErr) {
+              console.error('Error fetching default device count data:', deviceErr);
+            }
           }
         } else if (selectedCountry !== 'all') {
           response = await axios.get(`${API_BASE_URL}/api/screenTime/adminPanelScreenTimePerPlace/${selectedCountry}`);
@@ -251,6 +277,7 @@ const Screen: React.FC = () => {
             setApiData(null);
             setCropData(null);
             setDeviceData(null);
+            setAreaData(null);
           }
         } else if (selectedCrop !== 'all') {
           response = await axios.get(`${API_BASE_URL}/api/screenTime/adminPanelScreenTimePerCrops/${selectedCrop}`);
@@ -259,6 +286,7 @@ const Screen: React.FC = () => {
             setApiData(null);
             setPlaceData(null);
             setDeviceData(null);
+            setAreaData(null);
           }
         }
 
@@ -272,10 +300,51 @@ const Screen: React.FC = () => {
     };
 
     fetchData();
-  }, [selectedCountry, selectedCrop, deviceCountFilter]);
+  }, [selectedCountry, selectedCrop]); // Removed deviceCountFilter
 
-  // Update getChartData to handle all data sources correctly
+  // Update getChartData with more detailed logging
   const getChartData = () => {
+    // Log all data sources for debugging
+    console.log('deviceData:', deviceData);
+    console.log('deviceCountFilter:', deviceCountFilter);
+    console.log('areaData:', areaData);
+    console.log('areaFilter:', areaFilter);
+    console.log('placeData:', placeData);
+    console.log('cropData:', cropData);
+    console.log('apiData:', apiData);
+    
+    if (deviceCountFilter && deviceData?.data?.data?.data) {
+      const deviceDataArray = deviceData.data.data.data;
+      console.log('Building chart for device count data:', deviceDataArray);
+      
+      // Make sure we have valid device data
+      if (!deviceDataArray || !Array.isArray(deviceDataArray) || deviceDataArray.length === 0) {
+        console.error('Invalid device data array:', deviceDataArray);
+        return {
+          labels: [],
+          datasets: [{
+            label: `No data available for device count ${deviceCountFilter}`,
+            data: [],
+            backgroundColor: 'rgba(147, 51, 234, 0.6)',
+            borderColor: 'rgba(147, 51, 234, 1)',
+            borderWidth: 1,
+          }],
+        };
+      }
+      
+      // Return chart data for device count
+      return {
+        labels: deviceDataArray.map(item => item.screenName),
+        datasets: [{
+          label: `Screen Time for Devices ≥${deviceCountFilter}`,
+          data: deviceDataArray.map(item => item.averageDuration),
+          backgroundColor: 'rgba(147, 51, 234, 0.6)',
+          borderColor: 'rgba(147, 51, 234, 1)',
+          borderWidth: 1,
+        }],
+      };
+    }
+
     if (areaFilter && areaData) {
       // Get the area-specific data from the API response
       const areaSpecificData = areaData.map(item => {
@@ -308,21 +377,6 @@ const Screen: React.FC = () => {
           data: areaSpecificData.map(item => item.averageDuration),
           backgroundColor: 'rgba(234, 88, 12, 0.6)', // Orange color for area data
           borderColor: 'rgba(234, 88, 12, 1)',
-          borderWidth: 1,
-        }],
-      };
-    }
-
-    // Handle device count filter data
-    if (deviceCountFilter && deviceData?.data?.data?.data) {
-      const deviceDataArray = deviceData.data.data.data;
-      return {
-        labels: deviceDataArray.map(item => item.screenName),
-        datasets: [{
-          label: `Average Time Spent (minutes) - Devices ≥${deviceCountFilter}`,
-          data: deviceDataArray.map(item => item.averageDuration),
-          backgroundColor: 'rgba(147, 51, 234, 0.6)', // Purple color for device count
-          borderColor: 'rgba(147, 51, 234, 1)',
           borderWidth: 1,
         }],
       };
@@ -383,6 +437,7 @@ const Screen: React.FC = () => {
     };
   };
 
+  // Chart configuration options
   const options = {
     responsive: true,
     plugins: {
@@ -418,8 +473,29 @@ const Screen: React.FC = () => {
     },
   };
 
-  // Update getSummaryStats to handle area data correctly
+  // Update getSummaryStats with more detailed logging and error handling
   const getSummaryStats = () => {
+    if (deviceCountFilter && deviceData?.data?.data?.data) {
+      const deviceDataArray = deviceData.data.data.data;
+      console.log('Building summary stats for device count data:', deviceDataArray);
+      
+      // Make sure we have valid device data
+      if (!deviceDataArray || !Array.isArray(deviceDataArray) || deviceDataArray.length === 0) {
+        console.error('Invalid device data array for summary stats:', deviceDataArray);
+        return {
+          totalScreenViews: 0,
+          totalDuration: 0,
+          averageDuration: 0
+        };
+      }
+      
+      return {
+        totalScreenViews: deviceDataArray.reduce((sum, item) => sum + item.viewCount, 0),
+        totalDuration: deviceDataArray.reduce((sum, item) => sum + item.totalDuration, 0),
+        averageDuration: deviceDataArray.reduce((sum, item) => sum + item.averageDuration, 0) / deviceDataArray.length
+      };
+    }
+
     if (areaFilter && areaData) {
       // Calculate summary stats for the selected area
       const areaSpecificData = areaData.map(item => {
@@ -443,15 +519,6 @@ const Screen: React.FC = () => {
         totalScreenViews: areaSpecificData.reduce((sum, item) => sum + item.viewCount, 0),
         totalDuration: areaSpecificData.reduce((sum, item) => sum + item.totalDuration, 0),
         averageDuration: areaSpecificData.reduce((sum, item) => sum + item.averageDuration, 0) / areaSpecificData.length
-      };
-    }
-
-    if (deviceCountFilter && deviceData?.data?.data?.data) {
-      const deviceDataArray = deviceData.data.data.data;
-      return {
-        totalScreenViews: deviceDataArray.reduce((sum, item) => sum + item.viewCount, 0),
-        totalDuration: deviceDataArray.reduce((sum, item) => sum + item.totalDuration, 0),
-        averageDuration: deviceDataArray.reduce((sum, item) => sum + item.averageDuration, 0) / deviceDataArray.length
       };
     }
 
@@ -482,8 +549,25 @@ const Screen: React.FC = () => {
     };
   };
 
-  // Update getMostActiveScreen to handle area data correctly
+  // Update getMostActiveScreen with more detailed logging and error handling
   const getMostActiveScreen = () => {
+    if (deviceCountFilter && deviceData?.data?.data?.data) {
+      const deviceDataArray = deviceData.data.data.data;
+      console.log('Finding most active screen for device count data:', deviceDataArray);
+      
+      // Make sure we have valid device data
+      if (!deviceDataArray || !Array.isArray(deviceDataArray) || deviceDataArray.length === 0) {
+        console.error('Invalid device data array for most active screen:', deviceDataArray);
+        return 'No data available';
+      }
+      
+      const topScreen = deviceDataArray.reduce((max, current) => 
+        current.totalDuration > max.totalDuration ? current : max,
+        deviceDataArray[0]
+      );
+      return `${topScreen.screenName} (${Math.round(topScreen.totalDuration)} minutes)`;
+    }
+
     if (areaFilter && areaData) {
       // Get the most active screen for the selected area
       const areaSpecificData = areaData.map(item => {
@@ -501,17 +585,6 @@ const Screen: React.FC = () => {
       const topScreen = areaSpecificData.reduce((max, current) => 
         current.totalDuration > max.totalDuration ? current : max,
         areaSpecificData[0]
-      );
-      return `${topScreen.screenName} (${Math.round(topScreen.totalDuration)} minutes)`;
-    }
-
-    if (deviceCountFilter && deviceData?.data?.data?.data) {
-      const deviceDataArray = deviceData.data.data.data;
-      if (deviceDataArray.length === 0) return 'No data available';
-      
-      const topScreen = deviceDataArray.reduce((max, current) => 
-        current.totalDuration > max.totalDuration ? current : max,
-        deviceDataArray[0]
       );
       return `${topScreen.screenName} (${Math.round(topScreen.totalDuration)} minutes)`;
     }
@@ -569,27 +642,47 @@ const Screen: React.FC = () => {
     setPendingDeviceCount(e.target.value);
   };
 
-  // Update handleDeviceCountFilter to handle the response correctly
+  // Fix the handleDeviceCountFilter function to simply store the data directly
   const handleDeviceCountFilter = async () => {
     if (!pendingDeviceCount) return;
+    
     try {
       setLoading(true);
-      const response = await axios.get(`${API_BASE_URL}/api/admin/screenTime/device-count/${pendingDeviceCount}`);
-      console.log('Device count response:', response);
+      console.log(`Fetching device count data for count: ${pendingDeviceCount}`);
       
-      if (response.data?.data?.success) {
-        setDeviceData(response.data);
+      const response = await axios.get(`${API_BASE_URL}/api/admin/screenTime/device-count/${pendingDeviceCount}`);
+      console.log('Raw DeviceCountResponse:', JSON.stringify(response.data, null, 2));
+      
+      // Simplified approach: directly check and use the response data
+      if (response.data && response.data.success && Array.isArray(response.data.data)) {
+        console.log('Valid device data received, screens:', response.data.data.length);
+        
+        // Set device data directly with minimal transformation
+        const deviceScreens = response.data.data;
+        setDeviceData({
+          data: {
+            data: {
+              success: true,
+              data: deviceScreens
+            }
+          }
+        });
+        
+        // Update all relevant state
         setApiData(null);
         setPlaceData(null);
         setCropData(null);
+        setAreaData(null);
         setDeviceCountFilter(pendingDeviceCount);
+        setPendingDeviceCount('');
         setError(null);
       } else {
-        setError('No data available for the selected device count');
+        console.error('Invalid device data response:', response.data);
+        setError('Failed to fetch device count data: Invalid data format');
       }
-    } catch (err) {
-      setError('Failed to fetch device count data');
-      console.error('Error fetching device count data:', err);
+    } catch (error) {
+      console.error('Error fetching device count data:', error);
+      setError(`Failed to fetch device count data: ${error}`);
     } finally {
       setLoading(false);
       setIsFilterOpen(false);
@@ -646,8 +739,8 @@ const Screen: React.FC = () => {
   }
 
   // Update the error condition to check for any valid data source
-  if (!apiData?.data && !placeData?.data && !cropData?.data?.data) {
-    console.log('No data available. API Data:', apiData, 'Place Data:', placeData, 'Crop Data:', cropData);
+  if (!apiData?.data && !placeData?.data && !cropData?.data?.data && !deviceData?.data?.data?.data && !areaData) {
+    console.log('No data available. API Data:', apiData, 'Place Data:', placeData, 'Crop Data:', cropData, 'Device Data:', deviceData);
     return (
       <div className="flex justify-center items-center h-full">
         <div className="bg-yellow-50 p-4 rounded-lg text-yellow-600">
@@ -661,19 +754,35 @@ const Screen: React.FC = () => {
 
   // Update getCurrentData to handle device count data correctly
   const getCurrentData = (): ScreenDataType[] => {
-    if (areaFilter && areaData) {
-      return areaData;
-    }
-
+    // Log current filter states
+    console.log('getCurrentData - Filters:', { 
+      deviceCountFilter, 
+      areaFilter, 
+      selectedCountry, 
+      selectedCrop 
+    });
+    
     if (deviceCountFilter && deviceData?.data?.data?.data) {
+      console.log('Getting current data for device count');
       const deviceDataArray = deviceData.data.data.data;
+      
+      // Make sure we have valid device data
+      if (!deviceDataArray || !Array.isArray(deviceDataArray) || deviceDataArray.length === 0) {
+        console.error('Invalid device data array for current data:', deviceDataArray);
+        return [];
+      }
+      
       return deviceDataArray.map(item => ({
         screenName: item.screenName,
         averageDuration: item.averageDuration,
         totalDuration: item.totalDuration,
         viewCount: item.viewCount,
-        deviceCountBreakdown: item.deviceCountBreakdown
+        // Include any other properties needed for display
       }));
+    }
+
+    if (areaFilter && areaData) {
+      return areaData;
     }
 
     if (selectedCountry === 'all' && selectedCrop === 'all') {
@@ -683,6 +792,7 @@ const Screen: React.FC = () => {
     } else if (selectedCrop !== 'all' && cropData?.data?.data) {
       return cropData.data.data;
     }
+    
     return [];
   };
 
@@ -712,7 +822,7 @@ const Screen: React.FC = () => {
                 <path fillRule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clipRule="evenodd" />
               </svg>
               <span className="text-gray-700 font-medium">Filter</span>
-              {(selectedCountry !== 'all' || selectedCrop !== 'all') && (
+              {(selectedCountry !== 'all' || selectedCrop !== 'all' || deviceCountFilter || areaFilter) && (
                 <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                   Active
                 </span>

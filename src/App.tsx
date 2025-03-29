@@ -5,6 +5,7 @@ import Admin from "../Components/Admin/Admin"
 import Sidebar from "../Components/Sidebar/Sidebar"
 import Screen from "../Components/Screenviewanalytics/Screen"
 import User from "../Components/User/User"
+import Notfound from "../Components/Notfound/Notfound"
 import './App.css'
 
 // Layout component that includes the sidebar
@@ -27,7 +28,8 @@ function App() {
         <Route path="/admin" element={<DashboardLayout><Admin /></DashboardLayout>} />
         <Route path="/screen" element={<DashboardLayout><Screen /></DashboardLayout>} />
         <Route path="/users" element={<DashboardLayout><User /></DashboardLayout>} />
-        {/* Add more routes as needed */}
+        {/* Catch all route for undefined routes */}
+        <Route path="*" element={<Notfound />} />
       </Routes>
     </Router>
   )
